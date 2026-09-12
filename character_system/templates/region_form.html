@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if region %}编辑地区{% else %}新增地区{% endif %} - 角色数据库系统{% endblock %}
+{% block page_title %}{% if region %}编辑地区{% else %}新增地区{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 700px;">
+    <form method="POST">
+        <div class="form-group">
+            <label>地区名称 *</label>
+            <input type="text" name="name" required value="{{ region.name if region else '' }}" placeholder="例如：罗德岛、龙门、切尔诺伯格">
+        </div>
+
+        <div class="form-group">
+            <label>上级地区</label>
+            <select name="parent_id">
+                <option value="">无（顶级地区/国家）</option>
+                {% for r in all_regions %}
+                {% if not region or r.id != region.id %}
+                <option value="{{ r.id }}" 
+                    {% if region and region.parent_id == r.id %}selected{% endif %}
+                    {% if not region and default_parent_id == r.id %}selected{% endif %}>
+                    {{ r.name }}
+                </option>
+                {% endif %}
+                {% endfor %}
+            </select>
+            <div style="font-size: 12px; color: #8c8c8c; margin-top: 4px;">
+                选了上级地区就会成为该地区的子地区（例如国家→省→城市）
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>地区简介</label>
+            <textarea name="description" placeholder="输入地区的基本介绍...">{{ region.description if region else '' }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label>地区主要故事</label>
+            <textarea name="main_story" rows="6" placeholder="输入该地区发生的主要剧情、背景故事...">{{ region.main_story if region else '' }}</textarea>
+        </div>
+
+        <div style="margin-top: 30px;">
+            <button type="submit" class="btn btn-primary">
+                {% if region %}保存修改{% else %}创建地区{% endif %}
+            </button>
+            <a href="{{ url_for('region_list') }}" class="btn btn-default" style="margin-left: 10px;">
+                返回列表
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

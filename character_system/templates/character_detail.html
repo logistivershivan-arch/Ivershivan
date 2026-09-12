@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ character.name }} - 角色详情{% endblock %}
+{% block page_title %}角色详情{% endblock %}
+
+{% block content %}
+<div style="max-width: 1000px;">
+    <div style="margin-bottom: 20px;">
+        <a href="{{ url_for('character_list') }}" class="btn btn-default">
+            ← 返回角色列表
+        </a>
+        <a href="{{ url_for('character_edit', character_id=character.id) }}" class="btn btn-primary" style="margin-left: 10px;">
+            ✏️ 编辑角色
+        </a>
+        <a href="{{ url_for('character_delete', character_id=character.id) }}" 
+           class="btn btn-danger" 
+           style="margin-left: 10px;"
+           onclick="return confirm('确定要删除这个角色吗？')">
+            🗑️ 删除角色
+        </a>
+    </div>
+
+    <!-- 角色基本信息 -->
+    <div class="card" style="margin-bottom: 24px;">
+        <div style="display: flex; gap: 24px; align-items: flex-start;">
+            <!-- 头像区域 -->
+            <div style="width: 180px; height: 240px; border-radius: 8px; overflow: hidden; background: #f5f5f5; flex-shrink: 0;">
+                {% if character.avatar_path %}
+                <img src="{{ url_for('static', filename=character.avatar_path) }}" alt="{{ character.name }}" 
+                     style="width: 100%; height: 100%; object-fit: cover;">
+                {% else %}
+                <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 60px; color: #d9d9d9;">
+                    👤
+                </div>
+                {% endif %}
+            </div>
+            <!-- 基本信息区域 -->
+            <div style="flex: 1;">
+                <h2 style="font-size: 24px; margin-bottom: 20px; color: #1a1a1a;">
+                    {{ character.name }}
+                </h2>
+                
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 20px;">
+                    <div>
+                        <div style="color: #8c8c8c; font-size: 13px; margin-bottom: 4px;">性别</div>
+                        <div style="font-size: 15px; color: #262626;">{{ character.gender or '未设置' }}</div>
+                    </div>
+                    <div>
+                        <div style="color: #8c8c8c; font-size: 13px; margin-bottom: 4px;">生日</div>
+                        <div style="font-size: 15px; color: #262626;">{{ character.birthday or '未设置' }}</div>
+                    </div>
+                    <div>
+                        <div style="color: #8c8c8c; font-size: 13px; margin-bottom: 4px;">身高</div>
+                        <div style="font-size: 15px; color: #262626;">{{ character.height or '未设置' }}</div>
+                    </div>
+                    <div>
+                        <div style="color: #8c8c8c; font-size: 13px; margin-bottom: 4px;">体重</div>
+                        <div style="font-size: 15px; color: #262626;">{{ character.weight or '未设置' }}</div>
+                    </div>
+                    <div>
+                        <div style="color: #8c8c8c; font-size: 13px; margin-bottom: 4px;">主阵营</div>
+                        <div style="font-size: 15px; color: #262626;">
+                            {% if main_faction %}
+                                <a href="{{ url_for('faction_detail', faction_id=main_faction.id) }}" style="color: #1890ff;">{{ main_faction.name }}</a>
+                                {% if main_position %} · {{ main_position }}{% endif %}
+                            {% else %}
+                                未加入阵营
+                            {% endif %}
+                        </div>
+                    </div>
+                                       <div>
+                        <div style="color: #8c8c8c; font-size: 13px; margin-bottom: 4px;">国籍/所属地区</div>
+                        <div style="font-size: 15px; color: #262626;">
+                            {% if character.region %}
+                                <a href="{{ url_for('region_detail', region_id=character.region.id) }}" style="color: #1890ff;">
+                                    {% if character.region.parent %}{{ character.region.parent.name }} - {% endif %}{{ character.region.name }}
+                                </a>
+                            {% else %}
+                                未设置
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                {% if sub_factions %}
+                <div style="margin-bottom: 20px;">
+                    <div style="color: #8c8c8c; font-size: 13px; margin-bottom: 8px;">其他身份</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        {% for faction, position in sub_factions %}
+                        <div style="padding: 4px 12px; background: #f5f5f5; border-radius: 4px; font-size: 14px;">
+                            <a href="{{ url_for('faction_detail', faction_id=faction.id) }}" style="color: #595959;">{{ faction.name }}</a>
+                            {% if position %} · {{ position }}{% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- 短文本自定义字段（保留在原位置） -->
+                {% set short_fields = custom_fields | selectattr('field_type', 'equalto', 'short') | list %}
+                {% if short_fields %}
+                <div style="margin-bottom: 20px;">
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                        {% for field in short_fields %}
+                        <div>
+                            <div style="color: #8c8c8c; font-size: 13px; margin-bottom: 2px;">{{ field.field_name }}</div>
+                            <div style="font-size: 15px; color: #262626;">{{ field.field_value }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #f0f0f0;">
+            <div style="color: #8c8c8c; font-size: 13px; margin-bottom: 8px;">角色简介</div>
+            {% if character.description %}
+                <div style="line-height: 1.8; color: #595959; white-space: pre-wrap; padding: 0 16px; text-indent: 2em;">{{ character.description }}</div>
+            {% else %}
+                <div style="color: #bfbfbf;">暂无简介</div>
+            {% endif %}
+        </div>
+
+        <!-- 长文本自定义字段（显示在简介下方） -->
+        {% set long_fields = custom_fields | selectattr('field_type', 'equalto', 'long') | list %}
+        {% for field in long_fields %}
+        <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #f0f0f0;">
+            <div style="color: #8c8c8c; font-size: 13px; margin-bottom: 8px;">{{ field.field_name }}</div>
+            {% if field.field_value %}
+                <div style="line-height: 1.8; color: #595959; white-space: pre-wrap; padding: 0 16px; text-indent: 2em;">{{ field.field_value }}</div>
+            {% else %}
+                <div style="color: #bfbfbf;">暂无内容</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- 同阵营成员 -->
+    {% if main_faction and faction_members %}
+    <div class="card">
+        <h3 style="font-size: 16px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #f0f0f0;">
+            🏛️ 同阵营成员（{{ main_faction.name }}）
+        </h3>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+            {% for member in faction_members %}
+            <a href="{{ url_for('character_detail', character_id=member.id) }}" 
+               style="display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid #f0f0f0; border-radius: 8px; transition: all 0.3s;">
+                <div style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; background: #f5f5f5; flex-shrink: 0;">
+                    {% if member.avatar_path %}
+                    <img src="{{ url_for('static', filename=member.avatar_path) }}" alt="{{ member.name }}" 
+                         style="width: 100%; height: 100%; object-fit: cover;">
+                    {% else %}
+                    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #d9d9d9;">
+                        👤
+                    </div>
+                    {% endif %}
+                </div>
+                <div style="font-weight: 500; color: #262626; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    {{ member.name }}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

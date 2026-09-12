@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}新建故事{% endblock %}
+{% block page_title %}选择故事类型{% endblock %}
+{% block content %}
+<div style="max-width: 800px; margin: 50px auto; display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+    <a href="{{ url_for('story_new') }}" class="card" style="padding: 40px; text-align: center; text-decoration: none; color: inherit; transition: all 0.2s;">
+        <div style="font-size: 60px; margin-bottom: 20px;">📝</div>
+        <h3 style="margin: 0 0 10px 0;">短篇故事</h3>
+        <p style="color: #8c8c8c; margin: 0; font-size: 14px;">单篇独立文章，适合短篇、单章内容</p>
+    </a>
+    <a href="{{ url_for('story_new_long') }}" class="card" style="padding: 40px; text-align: center; text-decoration: none; color: inherit; transition: all 0.2s;">
+        <div style="font-size: 60px; margin-bottom: 20px;">📚</div>
+        <h3 style="margin: 0 0 10px 0;">长篇小说</h3>
+        <p style="color: #8c8c8c; margin: 0; font-size: 14px;">多章节作品，适合长篇小说、系列故事</p>
+    </a>
+</div>
+{% endblock %}

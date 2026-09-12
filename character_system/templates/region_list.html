@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+
+{% block title %}地区管理 - 角色数据库系统{% endblock %}
+{% block page_title %}地区管理{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="margin-bottom: 20px;">
+        <a href="{{ url_for('region_new') }}" class="btn btn-primary">
+            + 新增地区
+        </a>
+    </div>
+    
+    {% if regions %}
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 40px;"></th>
+                <th>地区名称</th>
+                <th>地区简介</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for region in regions %}
+            {% if not region.parent_id %}
+            <!-- 顶级地区 -->
+            <tr class="region-row" data-region-id="{{ region.id }}">
+                <td>
+                    {% if region.children.count() > 0 %}
+                    <button class="toggle-btn" onclick="toggleChildren({{ region.id }})" style="background: none; border: none; cursor: pointer; font-size: 16px;">
+                        ▼
+                    </button>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('region_detail', region_id=region.id) }}" style="color: #1890ff; font-weight: 500;">
+                        {{ region.name }}
+                    </a>
+                </td>
+                <td style="max-width: 500px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    {{ region.description or '-' }}
+                </td>
+                <td>
+                    <a href="{{ url_for('region_new', parent_id=region.id) }}" class="btn btn-default" style="padding: 4px 12px; font-size: 13px;">
+                        +子地区
+                    </a>
+                    <a href="{{ url_for('region_edit', region_id=region.id) }}" class="btn btn-default" style="padding: 4px 12px; font-size: 13px;">
+                        编辑
+                    </a>
+                    <a href="{{ url_for('region_delete', region_id=region.id) }}"
+                       class="btn btn-danger"
+                       style="padding: 4px 12px; font-size: 13px;"
+                       onclick="return confirm('确定要删除这个地区吗？子地区也会受影响哦~')">
+                        删除
+                    </a>
+                </td>
+            </tr>
+
+            <!-- 子地区（默认隐藏） -->
+            {% for child in region.children %}
+            <tr class="child-row child-of-{{ region.id }}" style="display: none;">
+                <td></td>
+                <td style="padding-left: 40px;">
+                    <span style="color: #8c8c8c;">└ </span>
+                    <a href="{{ url_for('region_detail', region_id=child.id) }}" style="color: #1890ff;">
+                        {{ child.name }}
+                    </a>
+                </td>
+                <td style="max-width: 500px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    {{ child.description or '-' }}
+                </td>
+                <td>
+                    <a href="{{ url_for('region_edit', region_id=child.id) }}" class="btn btn-default" style="padding: 4px 12px; font-size: 13px;">
+                        编辑
+                    </a>
+                    <a href="{{ url_for('region_delete', region_id=child.id) }}"
+                       class="btn btn-danger"
+                       style="padding: 4px 12px; font-size: 13px;"
+                       onclick="return confirm('确定要删除这个地区吗？')">
+                        删除
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="text-align: center; padding: 60px 0; color: #999;">
+        暂无地区数据，点击右上角"新增地区"开始添加吧！
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    // 折叠/展开子地区
+    function toggleChildren(regionId) {
+        const childRows = document.querySelectorAll('.child-of-' + regionId);
+        const btn = document.querySelector(`[data-region-id="${regionId}"] .toggle-btn`);
+
+        childRows.forEach(row => {
+            if (row.style.display === 'none') {
+                row.style.display = 'table-row';
+                btn.textContent = '▼';
+            } else {
+                row.style.display = 'none';
+                btn.textContent = '▶';
+            }
+        });
+    }
+</script>
+{% endblock %}

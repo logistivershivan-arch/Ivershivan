@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}故事管理 - 角色数据库系统{% endblock %}
+{% block page_title %}章节/故事线{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 20px;">
+    <a href="{{ url_for('story_new_choose') }}" class="btn btn-primary">
+        ✍️ 新建故事
+    </a>
+</div>
+
+{% if stories %}
+<div style="display: flex; flex-direction: column; gap: 16px;">
+    {% for item in stories %}
+    <div class="card" style="padding: 20px;">
+        <div style="display: flex; gap: 20px;">
+            <!-- 封面（可点击跳转） -->
+            <a href="{{ item.view_url }}" style="flex-shrink: 0;">
+                <div style="width: 80px; height: 110px; border-radius: 6px; background: #f5f5f5; display: flex; align-items: center; justify-content: center; font-size: 28px; color: #bfbfbf;">
+                    {% if item.is_long %}📚{% else %}📖{% endif %}
+                </div>
+            </a>
+            <!-- 内容区 -->
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+                <!-- 标题+操作 -->
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                    <a href="{{ item.view_url }}" style="font-size: 18px; font-weight: 600; color: #1a1a1a; text-decoration: none;">
+                        {{ item.title }}
+                        {% if item.is_long %}<span style="font-size: 12px; color: #8c8c8c; font-weight: normal; margin-left: 8px;">[长篇]</span>{% endif %}
+                    </a>
+                    <a href="{{ item.edit_url }}" style="font-size: 14px; color: #1890ff; flex-shrink: 0; margin-left: 10px;">编辑</a>
+                </div>
+
+                <!-- Summary 主要位置 -->
+                <div style="flex: 1; font-size: 15px; color: #595959; line-height: 1.7; margin-bottom: 16px;">
+                    {{ item.description or '暂无简介' }}
+                    {% if item.is_long and item.author %}<span style="color: #8c8c8c; font-size: 13px; margin-left: 10px;">- {{ item.author }}</span>{% endif %}
+                </div>
+
+                <!-- 底部标签：短篇显示标签，长篇显示章节数 -->
+                <div style="padding-top: 12px; border-top: 1px solid #f0f0f0; width: 100%;">
+                    {% if not item.is_long %}
+                    <!-- 短篇标签（和原来样式完全一致） -->
+                    <div style="margin-bottom: 6px; font-size: 14px; white-space:nowrap; word-break:keep-all; overflow:hidden; text-overflow:ellipsis; width:100%; line-height: 1.5;">
+                        {{ item.regions_html|safe }}
+                    </div>
+                    <div style="margin-bottom: 6px; font-size: 14px; white-space:nowrap; word-break:keep-all; overflow:hidden; text-overflow:ellipsis; width:100%; line-height: 1.5;">
+                        {{ item.factions_html|safe }}
+                    </div>
+                    <div style="font-size: 14px; white-space:nowrap; word-break:keep-all; overflow:hidden; text-overflow:ellipsis; width:100%; line-height: 1.5; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="white-space:nowrap; word-break:keep-all; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0;">
+                            {% for char in item.char_list %}
+                            <a href="{{ url_for('character_detail', character_id=char.id) }}" style="color: #1890ff; text-decoration: none; margin-right: 16px; display:inline; white-space:nowrap;">{{ char.name }}</a>
+                            {% endfor %}
+                        </div>
+                        <span style="font-size: 13px; color: #8c8c8c; flex-shrink: 0; margin-left: 10px; white-space:nowrap;">
+                            {{ item.word_count }} 字
+                        </span>
+                    </div>
+                    {% else %}
+                    <!-- 长篇显示章节数和总字数 -->
+                    <div style="text-align: right; font-size: 13px; color: #8c8c8c;">
+                        共 {{ item.chapters.count() }} 章 · {{ item.word_count }} 字
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card" style="text-align: center; padding: 80px 0; color: #999;">
+    <div style="font-size: 60px; margin-bottom: 16px;">📝</div>
+    <div>还没有故事，点击右上角按钮开始创作吧</div>
+</div>
+{% endif %}
+{% endblock %}

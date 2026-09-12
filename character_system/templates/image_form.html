@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if image %}编辑图片{% else %}上传图片{% endif %} - 角色数据库系统{% endblock %}
+{% block page_title %}{% if image %}编辑图片{% else %}上传图片{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 700px;">
+    <form method="POST" enctype="multipart/form-data">
+        {% if not image %}
+        <div class="form-group">
+            <label>选择图片 *</label>
+            <input type="file" name="image_file" accept="image/*" required style="padding: 8px 0;">
+            <div style="font-size: 12px; color: #8c8c8c; margin-top: 4px;">
+                支持PNG/JPG/GIF/WEBP格式，最大32MB
+            </div>
+        </div>
+        {% else %}
+        <div class="form-group">
+            <label>当前图片</label>
+            <div style="max-width: 300px; margin-bottom: 10px;">
+                <img src="{{ url_for('static', filename=image.file_path) }}" style="width: 100%; border-radius: 8px;">
+            </div>
+            <div style="font-size: 12px; color: #8c8c8c;">编辑模式下无法替换图片文件，仅可修改信息和标签</div>
+        </div>
+        {% endif %}
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>图片名称</label>
+                <input type="text" name="name" value="{{ image.name if image else '' }}" placeholder="不填则使用原文件名">
+            </div>
+            <div class="form-group">
+                <label>图片分类</label>
+                <select name="type">
+                    <option value="">未分类</option>
+                    <option value="立绘" {% if image and image.type == '立绘' %}selected{% endif %}>角色立绘</option>
+                    <option value="证件照" {% if image and image.type == '证件照' %}selected{% endif %}>证件照/头像</option>
+                    <option value="背景" {% if image and image.type == '背景' %}selected{% endif %}>场景背景</option>
+                    <option value="CG" {% if image and image.type == 'CG' %}selected{% endif %}>剧情CG</option>
+                    <option value="插图" {% if image and image.type == '插图' %}selected{% endif %}>其他插图</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="padding: 16px; background: #fafafa; border-radius: 8px; margin-bottom: 20px;">
+            <div style="font-weight: 500; margin-bottom: 16px;">🏷️ 图片标签</div>
+
+            <div class="form-group">
+                <label>出场角色（可多选）</label>
+                <select name="character_tags[]" multiple style="height: 120px;">
+                    {% for char in characters %}
+                    <option value="{{ char.id }}" {% if char.id in selected_characters %}selected{% endif %}>{{ char.name }}</option>
+                    {% endfor %}
+                </select>
+                <div style="font-size: 12px; color: #8c8c8c; margin-top: 4px;">按住Ctrl可多选多个角色</div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>关联阵营</label>
+                    <select name="faction_tag">
+                        <option value="">无</option>
+                        {% for f in factions %}
+                        <option value="{{ f.id }}" {% if selected_faction == f.id %}selected{% endif %}>{{ f.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>关联地区（可多选）</label>
+                    <select name="region_tags" multiple style="height: 100px;">
+                        {% for rid, rname in all_regions %}
+                        <option value="{{ rid }}" {% if rid in selected_regions %}selected{% endif %}>{{ rname }}</option>
+                        {% endfor %}
+                    </select>
+                    <div style="font-size: 12px; color: #8c8c8c; margin-top: 4px;">按住Ctrl可多选多个地区，子地区带缩进显示</div>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>自定义标签</span>
+                    <button type="button" class="btn btn-default" style="padding: 4px 12px; font-size: 13px;" onclick="addCustomTag()">
+                        + 添加标签
+                    </button>
+                </label>
+                <div id="custom-tags">
+                    {% for tag_name in custom_tags %}
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <input type="text" name="custom_tags[]" value="{{ tag_name }}"
+                               style="flex: 1; padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 4px;">
+                        <button type="button" class="btn btn-danger" style="padding: 8px 12px;" onclick="this.parentElement.remove()">删除</button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>图片描述</label>
+            <textarea name="description" placeholder="输入图片描述、出处等...">{{ image.description if image else '' }}</textarea>
+        </div>
+
+        <div style="margin-top: 30px;">
+            <button type="submit" class="btn btn-primary">
+                {% if image %}保存修改{% else %}上传图片{% endif %}
+            </button>
+            <a href="{% if image %}{{ url_for('image_detail', image_id=image.id) }}{% else %}{{ url_for('image_list') }}{% endif %}" class="btn btn-default" style="margin-left: 10px;">
+                返回
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+    // 添加自定义标签
+    function addCustomTag() {
+        const container = document.getElementById('custom-tags');
+        const input = document.createElement('div');
+        input.style.cssText = 'display: flex; gap: 10px; margin-bottom: 10px;';
+        input.innerHTML = `
+            <input type="text" name="custom_tags[]" placeholder="例如：节日庆典、日常、战斗"
+                   style="flex: 1; padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 4px;">
+            <button type="button" class="btn btn-danger" style="padding: 8px 12px;" onclick="this.parentElement.remove()">删除</button>
+        `;
+        container.appendChild(input);
+    }
+</script>
+{% endblock %}

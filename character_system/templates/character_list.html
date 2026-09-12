@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}角色管理 - 角色数据库系统{% endblock %}
+{% block page_title %}角色管理{% endblock %}
+
+{% block content %}
+<div class="card">
+        <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; gap: 10px;">
+            <form method="GET" style="display: flex; gap: 10px;">
+                <input type="text" name="keyword" placeholder="搜索角色名..." value="{{ keyword }}"
+                       style="padding: 6px 12px; border: 1px solid #d9d9d9; border-radius: 4px; width: 200px;">
+                <select name="faction_id" style="padding: 6px 12px; border: 1px solid #d9d9d9; border-radius: 4px;">
+                    <option value="">全部阵营</option>
+                    {% for faction in factions %}
+                    <option value="{{ faction.id }}" {% if selected_faction == faction.id %}selected{% endif %}>
+                        {{ faction.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary" style="padding: 6px 15px;">搜索</button>
+                {% if keyword or selected_faction %}
+                <a href="{{ url_for('character_list') }}" class="btn btn-default" style="padding: 6px 15px;">重置</a>
+                {% endif %}
+            </form>
+        </div>
+        <a href="{{ url_for('character_new') }}" class="btn btn-primary">
+            + 新增角色
+        </a>
+    </div>
+    
+    {% if characters %}
+    <table>
+        <thead>
+            <tr>
+                <th>角色姓名</th>
+                <th>性别</th>
+                <th>生日</th>
+                <th>身高</th>
+                <th>阵营</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for char in characters %}
+            <tr>
+                <td><a href="{{ url_for('character_detail', character_id=char.id) }}" style="color: #1890ff;">{{ char.name }}</a></td>
+                <td>{{ char.gender or '-' }}</td>
+                <td>{{ char.birthday or '-' }}</td>
+                <td>{{ char.height or '-' }}</td>
+                <td>
+    {% set main_rel = char.faction_relations|selectattr('is_main')|first %}
+    {{ main_rel.faction.name if main_rel else '-' }}
+</td>
+                <td>
+                    <a href="{{ url_for('character_edit', character_id=char.id) }}" class="btn btn-default" style="padding: 4px 12px; font-size: 13px;">
+                        编辑
+                    </a>
+                    <a href="{{ url_for('character_delete', character_id=char.id) }}" 
+                       class="btn btn-danger" 
+                       style="padding: 4px 12px; font-size: 13px;"
+                       onclick="return confirm('确定要删除这个角色吗？')">
+                        删除
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="text-align: center; padding: 60px 0; color: #999;">
+        暂无角色数据，点击右上角"新增角色"开始添加吧！
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

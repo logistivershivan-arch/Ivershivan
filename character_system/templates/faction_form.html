@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if faction %}编辑阵营{% else %}新增阵营{% endif %} - 角色数据库系统{% endblock %}
+{% block page_title %}{% if faction %}编辑阵营{% else %}新增阵营{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 700px;">
+    <form method="POST">
+        <div class="form-group">
+            <label>阵营名称 *</label>
+            <input type="text" name="name" required value="{{ faction.name if faction else '' }}" placeholder="例如：罗德岛、龙门近卫局、整合运动">
+        </div>
+
+        <div class="form-group">
+            <label>上级阵营</label>
+            <select name="parent_id">
+                <option value="">无（顶级阵营）</option>
+                {% for f in all_factions %}
+                {% if not faction or f.id != faction.id %}
+                <option value="{{ f.id }}"
+                    {% if faction and faction.parent_id == f.id %}selected{% endif %}
+                    {% if not faction and default_parent_id == f.id %}selected{% endif %}>
+                    {{ f.name }}
+                </option>
+                {% endif %}
+                {% endfor %}
+            </select>
+            <div style="font-size: 12px; color: #8c8c8c; margin-top: 4px;">
+                选了上级阵营就会成为该阵营的子部门
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>所属地区</label>
+            <select name="region_id">
+                <option value="">无</option>
+                {% for rid, rname in all_regions %}
+                <option value="{{ rid }}" {% if selected_region == rid %}selected{% endif %}>
+                    {{ rname }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>阵营简介</label>
+            <textarea name="description" placeholder="输入阵营的背景、定位、宗旨等...">{{ faction.description if faction else '' }}</textarea>
+        </div>
+
+        <div style="margin-top: 30px;">
+            <button type="submit" class="btn btn-primary">
+                {% if faction %}保存修改{% else %}创建阵营{% endif %}
+            </button>
+            <a href="{{ url_for('faction_list') }}" class="btn btn-default" style="margin-left: 10px;">
+                返回列表
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

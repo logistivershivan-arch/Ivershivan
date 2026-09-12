@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ chapter.title }}{% endblock %}
+{% block page_title %}{% if novel %}{{ novel.title }}{% else %}{{ chapter.title }}{% endif %}{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto; padding-bottom: 100px;">
+    <div style="margin-bottom: 20px;">
+        <a href="{% if novel %}{{ url_for('story_long_detail', story_id=novel.id) }}{% else %}{{ url_for('story_list') }}{% endif %}" class="btn btn-default">
+            ← {% if novel %}返回目录{% else %}返回列表{% endif %}
+        </a>
+        <a href="{{ url_for('story_edit', story_id=chapter.id) }}" class="btn btn-primary" style="margin-left: 10px;">
+            ✏️ 编辑
+        </a>
+    </div>
+
+    <div class="card" style="padding: 40px;">
+        {% if novel %}
+        <div style="text-align: center; color: #8c8c8c; margin-bottom: 10px; font-size: 14px;">{{ novel.title }}</div>
+        {% endif %}
+        <h1 style="font-size: 28px; text-align: center; margin:0 0 10px 0;">
+            {% if chapter.chapter_number %}{{ chapter.chapter_number }} {% endif %}{{ chapter.title }}
+        </h1>
+        <div style="text-align: center; color: #8c8c8c; margin-bottom: 32px; font-size: 14px;">
+            {{ chapter.created_time.strftime('%Y-%m-%d') }} · {{ chapter.content|length if chapter.content else 0 }} 字
+        </div>
+
+        <!-- 标签（短篇显示，长篇章节标签折叠不显示） -->
+        {% if not novel %}
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 32px;">
+            {% for rel in chapter.region_relations %}
+            <a href="{{ url_for('region_detail', region_id=rel.region.id) }}" style="font-size: 13px; padding: 4px 12px; background: #fff7e6; color: #fa8c16; border-radius: 4px;">{{ rel.region.name }}</a>
+            {% endfor %}
+            {% for rel in chapter.faction_relations %}
+            <a href="{{ url_for('faction_detail', faction_id=rel.faction.id) }}" style="font-size: 13px; padding: 4px 12px; background: #f6ffed; color: #52c41a; border-radius: 4px;">{{ rel.faction.name }}</a>
+            {% endfor %}
+            {% for rel in chapter.character_relations %}
+            <a href="{{ url_for('character_detail', character_id=rel.character.id) }}" style="font-size: 13px; padding: 4px 12px; background: #e6f7ff; color: #1890ff; border-radius: 4px;">{{ rel.character.name }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if chapter.description %}
+        <div style="padding: 16px; background: #fafafa; border-radius: 8px; margin-bottom: 32px; font-style: italic; color: #595959;">
+            {{ chapter.description }}
+        </div>
+        {% endif %}
+
+      <div style="line-height: 2; font-size: 16px; white-space: pre-wrap; color: #262626; text-indent: 0 !important; padding-left: 0; margin-left: 0;">{{ chapter.content or '暂无正文内容' }}
+</div>
+    </div>
+</div>
+
+{% if novel %}
+<!-- 长篇阅读导航 -->
+<!-- 目录侧边栏 -->
+<div id="catalog-sidebar" style="position: fixed; top:0; left:0; height:100vh; width:300px; background:white; z-index:1000; transform:translateX(-100%); transition: transform 0.3s ease; box-shadow: 2px 0 10px rgba(0,0,0,0.1); overflow-y: auto;">
+    <div style="padding: 20px; border-bottom:1px solid #f0f0f0; display:flex; justify-content:space-between; align-items:center;">
+        <div style="font-weight:600; font-size:16px;">目录</div>
+        <button onclick="toggleCatalog()" style="border:none; background:none; font-size:20px; cursor:pointer; color:#999;">×</button>
+    </div>
+    <div style="padding: 10px 0;">
+        {% for ch in chapter_list %}
+        <a href="{{ url_for('story_detail', chapter_id=ch.id) }}" style="display:block; padding:12px 20px; text-decoration:none; color:{% if ch.id == chapter.id %}#1890ff{% else %}#333{% endif %}; background:{% if ch.id == chapter.id %}#e6f7ff{% else %}transparent{% endif %}; font-size:14px;">
+            {% if ch.chapter_number %}{{ ch.chapter_number }} {% endif %}{{ ch.title }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+<!-- 遮罩 -->
+<div id="catalog-mask" onclick="toggleCatalog()" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:999; display:none;"></div>
+
+<!-- 底部导航（默认折叠） -->
+<div style="position:fixed; bottom:20px; right:20px; z-index:998;">
+    <!-- 折叠状态：只显示一个小按钮 -->
+    <button id="nav-toggle" onclick="toggleNav()" style="width:40px; height:40px; border-radius:50%; border:none; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.15); cursor:pointer; font-size:18px; display:flex; align-items:center; justify-content:center;">
+        ☰
+    </button>
+    <!-- 展开状态：三个按钮，默认隐藏 -->
+    <div id="nav-expand" style="position:absolute; bottom:50px; right:0; background:white; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.15); padding:8px; display:none; flex-direction:column; gap:8px; min-width:120px;">
+        <button onclick="goPrev()" {% if not prev_chapter %}disabled{% endif %} style="border:none; background:{% if prev_chapter %}#f5f5f5{% else %}#fafafa{% endif %}; color:{% if prev_chapter %}#333{% else %}#ccc{% endif %}; border-radius:8px; padding:10px 16px; cursor:{% if prev_chapter %}pointer{% else %}not-allowed{% endif %}; font-size:14px; text-align:left;">
+            ← 上一章
+        </button>
+        <button onclick="toggleCatalog(); toggleNav()" style="border:none; background:#f5f5f5; color:#333; border-radius:8px; padding:10px 16px; cursor:pointer; font-size:14px; text-align:left;">
+            📖 目录
+        </button>
+        <button onclick="goNext()" {% if not next_chapter %}disabled{% endif %} style="border:none; background:{% if next_chapter %}#f5f5f5{% else %}#fafafa{% endif %}; color:{% if next_chapter %}#333{% else %}#ccc{% endif %}; border-radius:8px; padding:10px 16px; cursor:{% if next_chapter %}pointer{% else %}not-allowed{% endif %}; font-size:14px; text-align:left;">
+            下一章 →
+        </button>
+    </div>
+</div>
+
+<script>
+function toggleCatalog() {
+    const sidebar = document.getElementById('catalog-sidebar');
+    const mask = document.getElementById('catalog-mask');
+    if (sidebar.style.transform === 'translateX(0px)') {
+        sidebar.style.transform = 'translateX(-100%)';
+        mask.style.display = 'none';
+    } else {
+        sidebar.style.transform = 'translateX(0)';
+        mask.style.display = 'block';
+    }
+}
+function toggleNav() {
+    const expand = document.getElementById('nav-expand');
+    expand.style.display = expand.style.display === 'flex' ? 'none' : 'flex';
+}
+// 点页面其他地方自动收起导航
+document.addEventListener('click', function(e) {
+    const nav = document.getElementById('nav-expand');
+    const toggle = document.getElementById('nav-toggle');
+    if (!nav.contains(e.target) && !toggle.contains(e.target)) {
+        nav.style.display = 'none';
+    }
+})
+function goPrev() {
+    {% if prev_chapter %}
+    window.location.href = "{{ url_for('story_detail', chapter_id=prev_chapter.id) }}";
+    {% endif %}
+}
+function goNext() {
+    {% if next_chapter %}
+    window.location.href = "{{ url_for('story_detail', chapter_id=next_chapter.id) }}";
+    {% endif %}
+}
+</script>
+{% endif %}
+{% endblock %}

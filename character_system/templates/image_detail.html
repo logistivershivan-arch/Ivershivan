@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ image.name }} - 图片详情{% endblock %}
+{% block page_title %}图片详情{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px;">
+    <div style="margin-bottom: 20px;">
+        <a href="{{ url_for('image_list') }}" class="btn btn-default">
+            ← 返回图集
+        </a>
+        <a href="{{ url_for('image_edit', image_id=image.id) }}" class="btn btn-primary" style="margin-left: 10px;">
+            ✏️ 编辑图片
+        </a>
+        <a href="{{ url_for('image_delete', image_id=image.id) }}"
+           class="btn btn-danger"
+           style="margin-left: 10px;"
+           onclick="return confirm('确定要删除这张图片吗？')">
+            🗑️ 删除图片
+        </a>
+    </div>
+
+    <div class="card">
+        <div style="text-align: center; margin-bottom: 24px; background: #f5f5f5; border-radius: 8px; padding: 20px;">
+            <img src="{{ url_for('static', filename=image.file_path) }}" alt="{{ image.name }}"
+                 style="max-width: 100%; max-height: 600px; border-radius: 4px;">
+        </div>
+
+        <h2 style="font-size: 22px; margin-bottom: 16px;">{{ image.name }}</h2>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; align-items: center;">
+            <span style="display: inline-block; padding: 4px 12px; background: #e6f7ff; color: #1890ff; border-radius: 4px; font-size: 13px;">
+                {{ image.type or '未分类' }}
+            </span>
+            <!-- 角色标签+设为头像按钮 -->
+            {% for char, tag, is_avatar in image_characters %}
+            <div style="display: flex; align-items: center; gap: 4px; padding: 2px 6px; background: #e6f7ff; color: #1890ff; border-radius: 4px; font-size: 13px;">
+                <span>#{{ char.name }}</span>
+                {% if is_avatar %}
+                <span style="font-size: 11px; background: #52c41a; color: white; padding: 1px 4px; border-radius: 2px;">当前头像</span>
+                {% else %}
+                <a href="{{ url_for('set_avatar', image_id=image.id, character_id=char.id) }}"
+                   style="font-size: 11px; background: #1890ff; color: white; padding: 1px 4px; border-radius: 2px;"
+                   onclick="return confirm('确定将这张图设为{{ char.name }}的头像吗？')">设为头像</a>
+                {% endif %}
+            </div>
+            {% endfor %}
+            <!-- 其他标签 -->
+            {% for tag in other_tags %}
+            <a href="{{ url_for('image_list', tag_id=tag.id) }}"
+               style="display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: 13px;
+                      {% if tag.type == 'faction' %}background: #f6ffed; color: #52c41a;
+                      {% elif tag.type == 'region' %}background: #fff7e6; color: #fa8c16;
+                      {% else %}background: #f9f0ff; color: #722ed1;{% endif %}">
+                #{{ tag.name }}
+            </a>
+            {% endfor %}
+        </div>
+
+        {% if image.description %}
+        <div style="line-height: 1.8; color: #595959; white-space: pre-wrap;">
+            {{ image.description }}
+        </div>
+        {% else %}
+        <div style="color: #bfbfbf;">暂无描述</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

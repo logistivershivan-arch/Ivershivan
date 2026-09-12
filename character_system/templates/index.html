@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}首页 - 角色数据库系统{% endblock %}
+{% block page_title %}首页{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 style="margin-bottom: 20px;">欢迎使用角色数据库系统！</h2>
+    <p style="color: #666; line-height: 1.8;">
+        这是你的数据库大作业项目，目前正在开发中。
+    </p>
+    <p style="color: #666; line-height: 1.8; margin-top: 10px;">
+        你可以点击左侧菜单开始使用各项功能。
+    </p>
+    
+    <div style="margin-top: 30px; display: flex; gap: 20px;">
+        <a href="{{ url_for('character_list') }}" class="btn btn-primary">
+            开始管理角色 →
+        </a>
+    </div>
+</div>
+{% endblock %}

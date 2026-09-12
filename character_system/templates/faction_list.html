@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}阵营管理 - 角色数据库系统{% endblock %}
+{% block page_title %}阵营管理{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="margin-bottom: 20px;">
+        <a href="{{ url_for('faction_new') }}" class="btn btn-primary">
+            + 新增阵营
+        </a>
+    </div>
+    
+    {% if factions %}
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 40px;"></th>
+                <th>阵营名称</th>
+                <th>阵营简介</th>
+                <th>重要成员人数</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for faction in factions %}
+            {% if not faction.parent_id %}
+            <!-- 顶级阵营 -->
+            <tr class="faction-row" data-faction-id="{{ faction.id }}">
+                <td>
+                    {% if faction.children.count() > 0 %}
+                    <button class="toggle-btn" onclick="toggleChildren({{ faction.id }})" style="background: none; border: none; cursor: pointer; font-size: 16px;">
+                        ▼
+                    </button>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('faction_detail', faction_id=faction.id) }}" style="color: #1890ff; font-weight: 500;">
+                        {{ faction.name }}
+                    </a>
+                </td>
+                <td style="max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    {{ faction.description or '-' }}
+                </td>
+                <td>
+    {% if faction.children.count() > 0 %}
+        {% set ns = namespace(member_count=0) %}
+        {% for child in faction.children %}
+            {% set ns.member_count = ns.member_count + child.member_relations|length %}
+        {% endfor %}
+        {{ ns.member_count }}
+    {% else %}
+        {{ faction.member_relations|length }}
+    {% endif %}
+</td>
+                <td>
+                    <a href="{{ url_for('faction_edit', faction_id=faction.id) }}" class="btn btn-default" style="padding: 4px 12px; font-size: 13px;">
+                        编辑
+                    </a>
+                    <a href="{{ url_for('faction_delete', faction_id=faction.id) }}"
+                       class="btn btn-danger"
+                       style="padding: 4px 12px; font-size: 13px;"
+                       onclick="return confirm('确定要删除这个阵营吗？子阵营也会受影响哦~')">
+                        删除
+                    </a>
+                </td>
+            </tr>
+
+            <!-- 子阵营（默认隐藏） -->
+            {% for child in faction.children %}
+            <tr class="child-row child-of-{{ faction.id }}" style="display: none;">
+                <td></td>
+                <td style="padding-left: 40px;">
+                    <span style="color: #8c8c8c;">└ </span>
+                    <a href="{{ url_for('faction_detail', faction_id=child.id) }}" style="color: #1890ff;">
+                        {{ child.name }}
+                    </a>
+                </td>
+                <td style="max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    {{ child.description or '-' }}
+                </td>
+                <td>{{ child.member_relations|length }}</td>
+                <td>
+                    <a href="{{ url_for('faction_edit', faction_id=child.id) }}" class="btn btn-default" style="padding: 4px 12px; font-size: 13px;">
+                        编辑
+                    </a>
+                    <a href="{{ url_for('faction_delete', faction_id=child.id) }}" 
+                       class="btn btn-danger" 
+                       style="padding: 4px 12px; font-size: 13px;"
+                       onclick="return confirm('确定要删除这个部门吗？')">
+                        删除
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="text-align: center; padding: 60px 0; color: #999;">
+        暂无阵营数据，点击右上角"新增阵营"开始添加吧！
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    // 折叠/展开子阵营
+    function toggleChildren(factionId) {
+        const childRows = document.querySelectorAll('.child-of-' + factionId);
+        const btn = document.querySelector(`[data-faction-id="${factionId}"] .toggle-btn`);
+        
+        childRows.forEach(row => {
+            if (row.style.display === 'none') {
+                row.style.display = 'table-row';
+                btn.textContent = '▼';
+            } else {
+                row.style.display = 'none';
+                btn.textContent = '▶';
+            }
+        });
+    }
+</script>
+{% endblock %}

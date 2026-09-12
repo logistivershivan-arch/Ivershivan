@@ -1,0 +1,305 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if character %}编辑角色{% else %}新增角色{% endif %} - 角色数据库系统{% endblock %}
+{% block page_title %}{% if character %}编辑角色{% else %}新增角色{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 800px;">
+    <form method="POST">
+        <div class="form-row">
+            <div class="form-group">
+                <label>角色姓名 *</label>
+                <input type="text" name="name" required value="{{ character.name if character else '' }}">
+            </div>
+            <div class="form-group">
+                <label>性别</label>
+                <select name="gender">
+                    <option value="">请选择</option>
+                    <option value="男" {% if character and character.gender == '男' %}selected{% endif %}>男</option>
+                    <option value="女" {% if character and character.gender == '女' %}selected{% endif %}>女</option>
+                    <option value="其他" {% if character and character.gender == '其他' %}selected{% endif %}>其他</option>
+                    <option value="未知" {% if character and character.gender == '未知' %}selected{% endif %}>未知</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>生日</label>
+                <input type="text" name="birthday" placeholder="例如：3月15日" value="{{ character.birthday if character else '' }}">
+            </div>
+            <div class="form-group">
+                <label>身高</label>
+                <input type="text" name="height" placeholder="例如：175cm" value="{{ character.height if character else '' }}">
+            </div>
+            <div class="form-group">
+                <label>体重</label>
+                <input type="text" name="weight" placeholder="例如：65kg" value="{{ character.weight if character else '' }}">
+            </div>
+        </div>
+                        <div class="form-group">
+            <label>国籍/所属地区</label>
+            <select name="region_id">
+                <option value="">无</option>
+                {% for rid, rname in all_regions %}
+                <option value="{{ rid }}" {% if selected_region == rid %}selected{% endif %}>
+                    {{ rname }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- 主阵营选择 -->
+        <div class="form-group">
+            <label>主阵营（列表页显示）</label>
+            <div style="display: flex; gap: 10px;">
+                <select name="main_faction_id" style="flex: 1;">
+                    <option value="">无主阵营</option>
+                    {% for faction in factions %}
+                    <option value="{{ faction.id }}" {% if character and main_faction and main_faction.id == faction.id %}selected{% endif %}>
+                        {{ faction.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <input type="text" name="main_position" placeholder="主阵营职位（例如：首领、干部）" value="{{ main_position if main_position else '' }}" style="flex: 1;">
+            </div>
+        </div>
+
+        <!-- 副阵营区域 -->
+        <div class="form-group">
+            <label style="display: flex; justify-content: space-between; align-items: center;">
+                <span>副阵营（其他身份）</span>
+                <button type="button" class="btn btn-default" style="padding: 4px 12px; font-size: 13px;" onclick="addSubFaction()">
+                    + 添加副阵营
+                </button>
+            </label>
+
+            <div id="sub-factions">
+                {% if sub_factions %}
+                    {% for f, pos in sub_factions %}
+                    <div class="sub-faction-row" style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <select name="sub_faction_id[]" style="flex: 1;">
+                            <option value="">选择阵营</option>
+                            {% for faction in factions %}
+                            <option value="{{ faction.id }}" {% if f.id == faction.id %}selected{% endif %}>
+                                {{ faction.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <input type="text" name="sub_position[]" placeholder="该阵营职位" value="{{ pos }}" style="flex: 1;">
+                        <button type="button" class="btn btn-danger" style="padding: 8px 12px;" onclick="removeSubFaction(this)">删除</button>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>角色简介</label>
+            <textarea id="description" name="description" placeholder="输入角色的详细介绍...">{{ character.description if character else '' }}</textarea>
+        </div>
+
+        <!-- 自定义字段区域 -->
+        <div class="form-group">
+            <label style="display: flex; justify-content: space-between; align-items: center;">
+                <span>自定义信息</span>
+                <button type="button" class="btn btn-default" style="padding: 4px 12px; font-size: 13px;" onclick="addCustomField()">
+                    + 添加自定义项
+                </button>
+            </label>
+
+            <div id="custom-fields">
+                {% if custom_fields %}
+                    {% for field in custom_fields %}
+                    <div class="custom-field-row" style="margin-bottom: 15px; border: 1px solid #f0f0f0; padding: 12px; border-radius: 4px;">
+                        <div style="display: flex; gap: 10px; margin-bottom: 8px;">
+                            <input type="text" name="custom_name[]" placeholder="字段名（如：血型）" value="{{ field.field_name }}"
+                                   style="flex: 1; padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 4px;">
+                            <select name="custom_type[]" style="width: 120px; padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 4px;" onchange="switchCustomType(this)">
+                                <option value="short" {% if field.field_type == 'short' %}selected{% endif %}>短文本</option>
+                                <option value="long" {% if field.field_type == 'long' %}selected{% endif %}>长文本</option>
+                            </select>
+                            <button type="button" class="btn btn-danger" style="padding: 8px 12px;" onclick="removeCustomField(this)">删除</button>
+                        </div>
+                        {% if field.field_type == 'long' %}
+                        <textarea name="custom_value[]" placeholder="字段内容" class="custom-value-input" style="width: 100%; min-height: 100px; padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 4px; resize: vertical;">{{ field.field_value }}</textarea>
+                        {% else %}
+                        <input type="text" name="custom_value[]" placeholder="字段内容" class="custom-value-input" value="{{ field.field_value }}"
+                               style="width: 100%; padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 4px;">
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+
+        <div style="margin-top: 30px;">
+            <button type="submit" class="btn btn-primary">
+                {% if character %}保存修改{% else %}创建角色{% endif %}
+            </button>
+            <a href="{{ url_for('character_list') }}" class="btn btn-default" style="margin-left: 10px;">
+                返回列表
+            </a>
+        </div>
+    </form>
+
+    <script>
+        // 添加副阵营行
+        function addSubFaction() {
+            const container = document.getElementById('sub-factions');
+            const row = document.createElement('div');
+            row.className = 'sub-faction-row';
+            row.style.cssText = 'display: flex; gap: 10px; margin-bottom: 10px;';
+            row.innerHTML = `
+                <select name="sub_faction_id[]" style="flex: 1; padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 4px;">
+                    <option value="">选择阵营</option>
+                    {% for faction in factions %}
+                    <option value="{{ faction.id }}">{{ faction.name }}</option>
+                    {% endfor %}
+                </select>
+                <input type="text" name="sub_position[]" placeholder="该阵营职位" style="flex: 1; padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 4px;">
+                <button type="button" class="btn btn-danger" style="padding: 8px 12px;" onclick="removeSubFaction(this)">删除</button>
+            `;
+            container.appendChild(row);
+        }
+
+        // 删除副阵营行
+        function removeSubFaction(btn) {
+            btn.closest('.sub-faction-row').remove();
+        }
+
+        // 添加自定义字段行
+        function addCustomField() {
+            const container = document.getElementById('custom-fields');
+            const row = document.createElement('div');
+            row.className = 'custom-field-row';
+            row.style.cssText = 'margin-bottom: 15px; border: 1px solid #f0f0f0; padding: 12px; border-radius: 4px;';
+            row.innerHTML = `
+                <div style="display: flex; gap: 10px; margin-bottom: 8px;">
+                    <input type="text" name="custom_name[]" placeholder="字段名（如：血型）"
+                           style="flex: 1; padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 4px;">
+                    <select name="custom_type[]" style="width: 120px; padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 4px;" onchange="switchCustomType(this)">
+                        <option value="short" selected>短文本</option>
+                        <option value="long">长文本</option>
+                    </select>
+                    <button type="button" class="btn btn-danger" style="padding: 8px 12px;" onclick="removeCustomField(this)">删除</button>
+                </div>
+                <input type="text" name="custom_value[]" placeholder="字段内容" class="custom-value-input"
+                       style="width: 100%; padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 4px;">
+            `;
+            container.appendChild(row);
+        }
+
+        // 切换自定义字段类型（短文本/长文本）
+                // 切换自定义字段类型（短文本/长文本）
+        function switchCustomType(select) {
+            const row = select.closest('.custom-field-row');
+            const valueInput = row.querySelector('.custom-value-input');
+            const currentValue = valueInput.value;
+
+            if (select.value === 'long') {
+                // 切换成长文本大编辑框
+                const textarea = document.createElement('textarea');
+                textarea.name = 'custom_value[]';
+                textarea.className = 'long-text-indent custom-value-input';
+                textarea.placeholder = '字段内容';
+                textarea.style.cssText = 'width: 100%; min-height: 100px; padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 4px; resize: vertical;';
+                textarea.value = currentValue;
+                valueInput.replaceWith(textarea);
+                // 自动绑定缩进功能
+                initIndent(textarea);
+                bindAutoIndent(textarea);
+            } else {
+                // 切换成短文本输入框
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.name = 'custom_value[]';
+                input.className = 'custom-value-input';
+                input.placeholder = '字段内容';
+                input.style.cssText = 'width: 100%; padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 4px;';
+                input.value = currentValue;
+                valueInput.replaceWith(input);
+            }
+        }
+
+        // 删除自定义字段行
+        function removeCustomField(btn) {
+            btn.closest('.custom-field-row').remove();
+        }
+
+                // 首行自动缩进（两个全角空格）
+        const indentStr = '\u3000\u3000';
+
+        // 初始化：给已有内容的每段加首行缩进
+        function initIndent(textarea) {
+            if (!textarea.value) return;
+            const lines = textarea.value.split('\n');
+            const indentedLines = lines.map(line => {
+                const trimmed = line.trimStart();
+                return trimmed ? indentStr + trimmed : line;
+            });
+            textarea.value = indentedLines.join('\n');
+        }
+
+        // 绑定缩进事件
+        function bindAutoIndent(textarea) {
+            // 回车自动加缩进
+            textarea.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const start = this.selectionStart;
+                    const end = this.selectionEnd;
+                    const value = this.value;
+                    this.value = value.substring(0, start) + '\n' + indentStr + value.substring(end);
+                    this.selectionStart = this.selectionEnd = start + 1 + indentStr.length;
+                }
+            });
+
+            // 粘贴自动给每段加缩进
+            textarea.addEventListener('paste', function(e) {
+                e.preventDefault();
+                const pasteText = (e.clipboardData || window.clipboardData).getData('text');
+                const lines = pasteText.split('\n');
+                const indentedLines = lines.map(line => {
+                    const trimmed = line.trimStart();
+                    return trimmed ? indentStr + trimmed : line;
+                });
+                const finalText = indentedLines.join('\n');
+
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+                this.value = this.value.substring(0, start) + finalText + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = start + finalText.length;
+            });
+        }
+
+        // 页面加载完成后初始化角色简介
+        window.addEventListener('load', function() {
+            const descTextarea = document.getElementById('description');
+            if (descTextarea) {
+                initIndent(descTextarea);
+                bindAutoIndent(descTextarea);
+            }
+
+            // 初始化已有的长文本自定义字段
+            document.querySelectorAll('.long-text-indent').forEach(textarea => {
+                initIndent(textarea);
+                bindAutoIndent(textarea);
+            });
+        });
+
+        // 动态新增长文本字段时自动绑定缩进
+        const originalSwitch = switchCustomType;
+        switchCustomType = function(select) {
+            originalSwitch(select);
+            const row = select.closest('.custom-field-row');
+            const textarea = row.querySelector('.long-text-indent');
+            if (textarea) {
+                initIndent(textarea);
+                bindAutoIndent(textarea);
+            }
+        }
+
+    </script>
+</div>
+{% endblock %}

@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ region.name }} - 地区详情{% endblock %}
+{% block page_title %}地区详情{% endblock %}
+
+{% block content %}
+<div style="max-width: 1000px;">
+    <div style="margin-bottom: 20px;">
+        <a href="{{ url_for('region_list') }}" class="btn btn-default">
+            ← 返回地区列表
+        </a>
+        <a href="{{ url_for('region_edit', region_id=region.id) }}" class="btn btn-primary" style="margin-left: 10px;">
+            ✏️ 编辑地区
+        </a>
+        <a href="{{ url_for('region_new', parent_id=region.id) }}" class="btn btn-success" style="margin-left: 10px; background: #52c41a;">
+            + 新建子地区
+        </a>
+    </div>
+
+    <!-- 地区基本信息 -->
+    <div class="card" style="margin-bottom: 24px;">
+        <h2 style="font-size: 24px; margin-bottom: 20px; color: #1a1a1a;">
+            🗺️ {{ region.name }}
+        </h2>
+        
+        {% if region.parent %}
+        <div style="margin-bottom: 16px;">
+            <div style="color: #8c8c8c; font-size: 13px; margin-bottom: 4px;">所属地区</div>
+            <a href="{{ url_for('region_detail', region_id=region.parent.id) }}" style="color: #1890ff;">
+                {{ region.parent.name }}
+            </a>
+        </div>
+        {% endif %}
+        
+        <div style="margin-bottom: 16px;">
+            <div style="color: #8c8c8c; font-size: 13px; margin-bottom: 8px;">地区简介</div>
+            {% if region.description %}
+                <div style="line-height: 1.8; color: #595959; white-space: pre-wrap;">
+                    {{ region.description }}
+                </div>
+            {% else %}
+                <div style="color: #bfbfbf;">暂无简介</div>
+            {% endif %}
+        </div>
+
+        {% if region.main_story %}
+        <div>
+            <div style="color: #8c8c8c; font-size: 13px; margin-bottom: 8px;">主要故事</div>
+            <div style="line-height: 1.8; color: #595959; white-space: pre-wrap; padding: 16px; background: #fafafa; border-radius: 8px;">
+                {{ region.main_story }}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- 子地区列表 -->
+    {% if region.children.count() > 0 %}
+    <div class="card" style="margin-bottom: 24px;">
+        <h3 style="font-size: 16px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #f0f0f0;">
+            📍 下辖地区（{{ region.children.count() }}个）
+        </h3>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+            {% for child in region.children %}
+            <a href="{{ url_for('region_detail', region_id=child.id) }}" 
+               style="display: block; padding: 16px; border: 1px solid #f0f0f0; border-radius: 8px; transition: all 0.3s;">
+                <div style="font-weight: 500; color: #262626; margin-bottom: 4px;">{{ child.name }}</div>
+                <div style="font-size: 13px; color: #8c8c8c; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    {{ child.description or '暂无简介' }}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 地区图集（横向滚动） -->
+    <div class="card" style="margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #f0f0f0;">
+            <h3 style="font-size: 16px; margin: 0;">
+                🖼️ 地区图集
+                {% if region_images %}<span style="font-size: 13px; color: #8c8c8c; font-weight: normal; margin-left: 8px;">共{{ region_tag.image_relations|length }}张</span>{% endif %}
+            </h3>
+            {% if region_tag and region_images %}
+            <a href="{{ url_for('image_list', tag_id=region_tag.id) }}" style="font-size: 14px; color: #1890ff;">
+                查看全部 >
+            </a>
+            {% endif %}
+        </div>
+        {% if region_images %}
+        <div style="overflow-x: auto; white-space: nowrap; padding-bottom: 8px;">
+            {% for img in region_images %}
+            <a href="{{ url_for('image_detail', image_id=img.id) }}"
+               style="display: inline-block; width: 120px; height: 160px; margin-right: 12px; border-radius: 8px; overflow: hidden; background: #f5f5f5; vertical-align: top; transition: transform 0.2s;">
+                <img src="{{ url_for('static', filename=img.file_path) }}" alt="{{ img.name }}"
+                     style="width: 100%; height: 100%; object-fit: cover;">
+            </a>
+            {% endfor %}
+            {% if region_tag and region_tag.image_relations|length > 8 %}
+            <a href="{{ url_for('image_list', tag_id=region_tag.id) }}"
+               style="display: inline-flex; width: 120px; height: 160px; margin-right: 12px; border-radius: 8px; border: 1px dashed #d9d9d9; align-items: center; justify-content: center; color: #8c8c8c; font-size: 14px; vertical-align: top;">
+                查看全部 >
+            </a>
+            {% endif %}
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 40px 0; color: #999;">
+            暂无该地区相关图片，上传图片时选择该地区标签即可显示在这里
+        </div>
+        {% endif %}
+    </div>
+
+        <!-- 本地阵营 -->
+    <div class="card" style="margin-bottom: 24px;">
+        <h3 style="font-size: 16px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #f0f0f0;">
+            🏛️ 本地阵营（{{ region.factions|length }}个）
+        </h3>
+        {% if region.factions %}
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+            {% for faction in region.factions %}
+            <a href="{{ url_for('faction_detail', faction_id=faction.id) }}"
+               style="display: block; padding: 16px; border: 1px solid #f0f0f0; border-radius: 8px; transition: all 0.3s;">
+                <div style="font-weight: 500; color: #262626; margin-bottom: 4px;">{{ faction.name }}</div>
+                <div style="font-size: 13px; color: #8c8c8c; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    {{ faction.description or '暂无简介' }}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 40px 0; color: #999;">
+            暂无该地区阵营，编辑阵营时选择所属地区即可显示在这里
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- 本地角色 -->
+    <div class="card">
+        <h3 style="font-size: 16px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #f0f0f0;">
+            👥 本地角色（{{ local_characters|length }}人）
+        </h3>
+        {% if local_characters %}
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+            {% for char in local_characters %}
+            <a href="{{ url_for('character_detail', character_id=char.id) }}"
+               style="display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid #f0f0f0; border-radius: 8px; transition: all 0.3s;">
+                <div style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; background: #f5f5f5; flex-shrink: 0;">
+                    {% if char.avatar_path %}
+                    <img src="{{ url_for('static', filename=char.avatar_path) }}" alt="{{ char.name }}"
+                         style="width: 100%; height: 100%; object-fit: cover;">
+                    {% else %}
+                    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #d9d9d9;">
+                        👤
+                    </div>
+                    {% endif %}
+                </div>
+                <div style="font-weight: 500; color: #262626; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    {{ char.name }}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 40px 0; color: #999;">
+            暂无该地区角色，给角色设置国籍为该地区即可显示在这里
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
